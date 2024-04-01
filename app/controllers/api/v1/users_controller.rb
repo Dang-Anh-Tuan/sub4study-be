@@ -14,7 +14,7 @@ class Api::V1::UsersController < ApplicationController
       if result.key?(:user_id)
         @user = User.find_by(id: result[:user_id])
         if @user
-          render json: UserDTO.new(@user), status: 200
+          render json: {data: UserDTO.new(@user), status: 200}, status: 200
         else
           render json: { message: "User not found" }, status: :not_found
         end
@@ -38,6 +38,23 @@ class Api::V1::UsersController < ApplicationController
   end
 
   def create
+    checkExistUsername = User.find_by(username: params[:username])
+    checkExistEmail = User.find_by(email: params[:email])
+    
+    if checkExistUsername 
+      render json: {
+        status: 422,
+        error: "username exist"
+      }
+      return
+    end
+    if checkExistEmail 
+      render json: {
+        status: 422,
+        error: "email exist"
+      }
+      return
+    end
     if params[:password] != params[:confirm_password]
       render json: {
         error: "Confirm password is not same password"

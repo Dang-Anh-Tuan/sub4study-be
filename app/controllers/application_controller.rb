@@ -36,7 +36,7 @@ class ApplicationController < ActionController::API
   def authorized
     current_user_res = current_user
     unless current_user_res.is_a?(Hash) && current_user_res.key?(:user_id)
-    render json: { message: 'Please log in' }, status: :unauthorized
+    render json: { message: 'Please log in', status: 401 }, status: :unauthorized
     end
   end
 end

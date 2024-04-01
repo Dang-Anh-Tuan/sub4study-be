@@ -4,7 +4,7 @@ require_relative '../../../jwt/jwt_helper.rb'
 class Api::V1::AuthController < ApplicationController
   skip_before_action :authorized, only: [:login, :refresh_token]
   
-  DURATION_TIME_JWT = 3600 # (1 hour)
+  DURATION_TIME_JWT = 300 # (5 minutes)
   DURATION_TIME_REFRESH_JWT = 2592000 # (1 month)
   
   def self.generate_response_token (user)
@@ -18,7 +18,7 @@ class Api::V1::AuthController < ApplicationController
     @refresh_token = JWTHelper.create_token(user, time_now, exp_refresh)
     user.update(refresh_token: @refresh_token)
     return {
-      accesss_token: @token,  
+      access_token: @token,  
       refresh_token: @refresh_token,
       iat: time_now,
       exp: exp,
@@ -31,7 +31,7 @@ class Api::V1::AuthController < ApplicationController
     if @user
       if @user.authenticate(login_params[:password], @user.password)
         result = self.class.generate_response_token(@user)
-        render json: result, status: 200
+        render json: {data: result, status: 200}, status: 200
       else
         render json: { error: 'Invalid username or password' }, status: :unauthorized
       end
@@ -41,7 +41,11 @@ class Api::V1::AuthController < ApplicationController
   end
   
   def refresh_token
-    decode_payload = JWT.decode(refresh_params[:refresh_token], ENV["SECRET_KEY_JWT"], true, algorithm: 'HS256')
+    decode_payload = JWT.decode(refresh_params[:refresh_token], 
+      ENV["SECRET_KEY_JWT"], 
+      true, 
+      algorithm: 'HS256'
+    )
     payload = decode_payload[0]
     exp = payload['exp']
     time_now = Time.now.to_i
@@ -51,7 +55,7 @@ class Api::V1::AuthController < ApplicationController
       user_id = payload['id']
       user = User.find_by(id: user_id)
       if user.refresh_token == refresh_params[:refresh_token]
-        render json: self.class.generate_response_token(user), status: 200
+        render json: {data: self.class.generate_response_token(user), status: 200}, status: 200
       else
         render json: { message: "Refresh token invalid" }, status: 401
       end
